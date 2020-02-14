@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>소켓챗</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script
+  src="https://code.jquery.com/jquery-3.4.1.js"
+  integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
+  crossorigin="anonymous"></script>
+</head>
+<body>
+  <h1 id="nicknameview">아이디</h1>
+<textarea rows="10" cols="30" id="chatlog"></textarea><br>
+<input type="text" id="msg"><input type="button" value="msg submit" onclick="sendMsg()">
+</body>
+<script>
+    var socket = io.connect('http://localhost:3000');
+    socket.on('sendMsg', function (data) {
+        socket.id!=data.nickname&&$('#chatlog').append(data.nickname+":"+data.msg+"\n");
+    })
+
+    socket.on('left', function (nickname) {
+      console.log(nickname)
+        $('#chatlog').append(nickname+" 접속종료"+"\n");
+    })
+
+    socket.on('join',function(nickname){
+      socket.id!=nickname&&$('#chatlog').append(nickname+" 접속됨"+"\n");
+    })
+    function sendMsg() {
+        $('#nicknameview').text(socket.id)
+        socket.emit("sendMsg",{msg: $('#msg').val(),nickname: socket.id});
+        $('#chatlog').append("나:"+$('#msg').val()+"\n");
+        $('#msg').val('');
+    }
+</script>
+</html>
