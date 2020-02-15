@@ -8,7 +8,6 @@ const rl = readline.createInterface({
 module.exports=function(io){
 io.on('connection', function (socket) {
     var nickname=socket.id
-    socket.join('hi')
     console.log(nickname+" 연결됨")
     io.emit('join',nickname)
     socket.on('sendMsg',function(data){

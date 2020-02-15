@@ -11,8 +11,7 @@
 <body>
   <h1 id="nicknameview">아이디</h1>
 <textarea rows="10" cols="30" id="chatlog"></textarea><br>
-<input type="text" id="room" placeholder="방"><br>
-<input type="text" id="msg" placeholder="내용"><input type="button" value="msg submit" onclick="sendMsg()">
+<input type="text" id="msg"><input type="button" value="msg submit" onclick="sendMsg()">
 </body>
 <script>
     var socket = io.connect('http://localhost:3000');
@@ -30,11 +29,7 @@
     })
     function sendMsg() {
         $('#nicknameview').text(socket.id)
-        socket.emit("sendMsg",{
-          msg: $('#msg').val(),
-          nickname: socket.id,
-          room: $('#room').val()
-        });
+        socket.emit("sendMsg",{msg: $('#msg').val(),nickname: socket.id});
         $('#chatlog').append("나:"+$('#msg').val()+"\n");
         $('#msg').val('');
     }
