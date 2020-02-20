@@ -1,29 +1,39 @@
-const readline=require('readline')
-
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  })
-
 module.exports=function(io){
 io.on('connection', function (socket) {
-    var nickname=socket.id
-    console.log(nickname+" 연결됨")
-    io.emit('join',nickname)
-    socket.on('sendMsg',function(data){
-        io.emit("sendMsg",{msg: data.msg,nickname: data.nickname});
-        console.log(data.nickname+":"+data.msg)
+    let nickname='익명'
+    let room='메인'
+
+    // 새로운 클라이언트가 방에 입장할때
+    socket.on('joinsocket',function(data){
+        // 기본 이름은 익명
+        nickname=data.nickname
+        // 기본 방은 메인
+        room=data.room
+        console.log(`${nickname} ${room} 으로 입장`)
+        socket.join(room)
+        // 자신이 들어간 모든 방 인원에게 joinnew 이벤트 보냄
+        io.sockets.in(room).emit('joinnew',{
+            nickname:nickname,
+            count:io.sockets.adapter.rooms[room].length
+        })
     })
-    
-    rl.on("line", function(line) {
-        socket.emit('sendMsg', {msg:line,nickname:'서버'})
-    }).on("close", function() {
-        process.exit()
+
+    // 클라이언트가 채팅을 보낼때
+    socket.on('sendMsg',function(data){
+        let msg=data.msg
+        
+        // 자신을 제외한 방 인원에게 sendMsg 이벤트 보냄
+        socket.broadcast.to(room).emit('sendMsg',{
+            nickname:nickname,
+            msg:msg
+        })
     })
     
     socket.on('disconnect',function(socket){
-        io.emit('left',nickname)
-        console.log(nickname+" 접속종료");
+        io.sockets.in(room).emit('leave',{
+            nickname:nickname,
+            count:io.sockets.adapter.rooms[room].length
+        })
     })
 })
 }

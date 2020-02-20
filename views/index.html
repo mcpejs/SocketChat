@@ -1,37 +1,105 @@
-<!DOCTYPE html>
 <html>
 <head>
-    <title>소켓챗</title>
+    <title id="title">메인 : 0명</title>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8"/>
     <script src="/socket.io/socket.io.js"></script>
-    <script
-  src="https://code.jquery.com/jquery-3.4.1.js"
-  integrity="sha256-WpOohJOqMqqyKL9FccASB9O0KwACQJpFTUBLTYOVvVU="
-  crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+    <script type="text/javascript" src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+
 </head>
 <body>
-  <h1 id="nicknameview">아이디</h1>
-<textarea rows="10" cols="30" id="chatlog"></textarea><br>
-<input type="text" id="msg"><input type="button" value="msg submit" onclick="sendMsg()">
-</body>
-<script>
-    var socket = io.connect('http://localhost:3000');
-    socket.on('sendMsg', function (data) {
-        socket.id!=data.nickname&&$('#chatlog').append(data.nickname+":"+data.msg+"\n");
-    })
+    <div data-role="page" id="main">
+        <h1>방 입장화면</h1>
+        <input type="text" id="nickname" placeholder="닉네임">
+        <input type="text" id="roomname" placeholder="방이름">
+        <button onclick="enterromm()">입장</button>
+    </div>
+    <div data-role="page" id="chatpage">
+        <div data-role="header">
+            <h1>
+              <span id="roomdisplay">메인</span>
+              &nbsp;:&nbsp;
+              <span id="userCount">0명</span>
+            </h1>
+        </div>
+        <div data-role="content">
+            <ul id="chatlist" data-role="listview" data-inset="true"></ul>
+            <input id="inputMessage" value="" placeholder="닉네임: 익명"/>
+            <input type="button" id="submit" value="입력" onclick="sendmsg()"/>
+            </div>
+        </div>
+    </body>
 
-    socket.on('left', function (nickname) {
-      console.log(nickname)
-        $('#chatlog').append(nickname+" 접속종료"+"\n");
-    })
+    <script>
+        let nickname='익명'
+        let roomname='메인'
+        let count=0
+        var socket = io.connect('http://localhost:3000');
+        // 새로운 사람이 들어왔을때
+        socket.on('joinnew',function(data){
+          $('#userCount').text(count+'명')
+          count=Number(data.count)
+          $('#title').text(`${roomname} : ${count}명`)
+          pushChat('시스템',data.nickname+' 님이 입장하셨습니다.')
+        })
 
-    socket.on('join',function(nickname){
-      socket.id!=nickname&&$('#chatlog').append(nickname+" 접속됨"+"\n");
-    })
-    function sendMsg() {
-        $('#nicknameview').text(socket.id)
-        socket.emit("sendMsg",{msg: $('#msg').val(),nickname: socket.id});
-        $('#chatlog').append("나:"+$('#msg').val()+"\n");
-        $('#msg').val('');
-    }
+        // 다른 사람이 나갔을때
+        socket.on('leave',function(data){
+          count-=1
+          $('#userCount').text(count+'명')
+          $('#title').text(`${roomname} : ${count}명`)
+          pushChat('시스템',data.nickname+' 님이 퇴장하셨습니다.')
+        })
+
+        socket.on('sendMsg',function(data){
+          let content=data.msg
+          let sendername=data.nickname
+          pushChat(sendername,content)
+        })
+        
+        function sendgetusercount(){
+          socket.emit('usercount')
+        }
+        function enterromm(){
+          // 입력된 이름정보 없을시 기본 이름값은 익명
+          if($('#nickname').val()){
+              nickname=$('#nickname').val()
+          }
+          // 입력된 방 이름 정보 없을시 기본 방이름값은 메인
+          if($('#roomname').val()){
+              roomname=$('#roomname').val()
+          }
+
+          window.location.href='#chatpage'
+
+          $('#inputMessage').attr('placeholder','닉네임: '+nickname)
+          $('#roomdisplay').text(roomname)
+
+          socket.emit("joinsocket",{
+          nickname: nickname,
+          room: roomname
+          });
+        }
+
+        function sendmsg(){
+          let content=$('#inputMessage').val()
+          $('#inputMessage').val('')
+          pushChat('나',content)
+          socket.emit('sendMsg',{
+              msg:content
+          })
+        }
+
+        function pushChat(nickname,content){
+          let chat=`
+          <li>
+          <h3>${nickname}</h3>
+          <h4>${content}</h4>
+          </li>
+          `
+          $('#chatlist').append(chat)
+          $("#chatlist").listview('refresh');
+        }
 </script>
 </html>
