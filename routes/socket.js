@@ -31,8 +31,7 @@ io.on('connection', function (socket) {
     
     socket.on('disconnect',function(socket){
         io.sockets.in(room).emit('leave',{
-            nickname:nickname,
-            count:io.sockets.adapter.rooms[room].length
+            nickname:nickname
         })
     })
 })
