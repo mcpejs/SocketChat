@@ -30,6 +30,7 @@ io.on('connection', function (socket) {
     })
     
     socket.on('disconnect',function(socket){
+        // 자신이 속한 방에있는 인원에게 전송 
         io.sockets.in(room).emit('leave',{
             nickname:nickname
         })
